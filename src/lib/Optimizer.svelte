@@ -1,11 +1,12 @@
 <script lang="ts">
  import { assignmentTable, optimizerProblem, parseSolution, countRank } from './optimize'
- import { rankColor } from './util'
+import { idIfy, rankColor } from './util'
  import highs_loader, { HighsSolution } from 'highs'
  import highsUrl from 'highs/build/highs.wasm?url'
 
  export let data
  export let shorts: string[]
+ export let pinned: object
 
  let error: Error = null
  let show_rankings = true
@@ -20,7 +21,6 @@
  let power = '1'
  let min_students = 4
  let max_students = 6
- let absences = 0
  let absences_max = 2
  let caps = {
      1: '',
@@ -41,15 +41,27 @@
          minStudents: min_students,
          maxStudents: max_students,
          forceInclude: force_include,
+         absencesMax: absences_max,
+         pinned,
          caps
      })
  } catch (e) {
      error = e
  }
- $: highs.then(h => { solution = h.solve(optimizerScript) })
- $: solution && (assignments = parseSolution(solution, data, shorts, absences))
+ $: highs.then(h => { solution = h.solve(optimizerScript) });
+ $: solution && (assignments = parseSol(solution))
  $: chosenShorts = [...new Set(Object.values(assignments).map(s => s.short))]
  $: assignTable = assignmentTable(assignments, chosenShorts)
+
+ function parseSol(solution) {
+     // Hide this in a function so svelte thinks the assignments depends only on the assignments
+     return parseSolution(solution, data, shorts)
+ }
+
+ function scroll(name) {
+     // Scroll to the element for the given name in the Students table.
+     document.getElementById(idIfy(name)).scrollIntoView()
+ }
 </script>
 
 <div class="box">
@@ -72,6 +84,15 @@
     <div class="field field-sm">
       <p class="control">
         <input class="input" type="number" bind:value={max_students}>
+      </p>
+    </div>
+
+    <div class="field-label is-normal field-label-xs">
+      <label class="label">Absent/Gr &leq;</label>
+    </div>
+    <div class="field field-sm">
+      <p class="control">
+        <input class="input" type="number" bind:value={absences_max}>
       </p>
     </div>
     <div class="field-label is-normal">
@@ -124,11 +145,19 @@
           <tr>
             {#each row as data}
               {#if data && show_rankings}
-                <td style="background-color: {rankColor(data.rank)}">
+                <td style="background-color: {rankColor(data.rank)}" on:click={scroll(data.name)}>
                   {data.name} ({data.rank}) {#if data.director} <span class="tag is-success">Dir.</span>{/if}
+                  {#if pinned[data.name]}
+                    <span class="icon is-small has-text-grey-dark">
+                      <i class="fas fa-thumbtack"></i>
+                    </span>
+                  {/if}
                 </td>
               {:else}
-                <td>{data?.name || ''} {#if data?.director} <span class="tag is-primary is-light">Dir.</span>{/if}</td>
+                <td on:click={scroll(data.name)}>
+                  {data ? (data.name.toLowerCase().includes('absent') ? '+1' : data.name) : ''}
+                  {#if data?.director} <span class="tag is-primary is-light">Dir.</span>{/if}
+                </td>
               {/if}
             {/each}
           </tr>
@@ -185,7 +214,7 @@
  .field-squish {
      flex-grow: 0;
      white-space: nowrap;
-     margin: 0 1em;
+     margin: 0 0.5em;
  }
 
  .shortlist { columns: 4 }

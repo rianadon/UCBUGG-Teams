@@ -12,8 +12,12 @@ export interface OptimizerOptions {
     power: number
     minStudents: number
     maxStudents: number
+    absencesMax: number
     forceInclude: {
         [short: string]: boolean
+    }
+    pinned: {
+        [name: string]: string
     }
     caps: {
         [pref: number]: string // string since they come in from text fields
@@ -27,6 +31,7 @@ export function optimizerProblem(data: OptimizerData[], shorts: string[], option
     let objective = '0'
 
     let tallies = {};
+    let absents: number[] = []; // List of students who were absent
 
     // Iterate per student, ensuring that they are assigned to only 1 short
     // And minimize the total rankings of students
@@ -43,6 +48,10 @@ export function optimizerProblem(data: OptimizerData[], shorts: string[], option
             tallies[preference].push(vars[j]);
         }
         if (data[i].directing) shortsToDirectors[data[i].directing] = i
+        if (options.pinned[data[i].name]) {
+            constraints.push(`x${i}@${shorts.indexOf(options.pinned[data[i].name])} = 1`)
+        }
+        if (data[i].name.toLowerCase().includes('absent')) absents.push(i)
     }
 
     // Iterate per short, making sure that short gets the correct range of students.
@@ -58,7 +67,8 @@ export function optimizerProblem(data: OptimizerData[], shorts: string[], option
         // Instead, it's omitted from the initial variables, and its coefficient is later modified to compensate
         constraints.push(
             `${vars_nodir.join('+')} - ${options.minStudents - 1} ${director_ass} >= 0`,
-            `${vars_nodir.join('+')} - ${options.maxStudents - 1} ${director_ass} <= 0`
+            `${vars_nodir.join('+')} - ${options.maxStudents - 1} ${director_ass} <= 0`,
+            '0 +' + absents.map(a => `x${a}@${j}`).join('+') + '<= ' + options.absencesMax // Limit absent students
         )
 
         // Handle forced inclusion

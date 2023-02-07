@@ -1,4 +1,5 @@
 export function rankColor(rank: number) {
+    if (rank == null) return 'hsl(0, 0%, 92%)'
     if (rank == 1) return 'hsl(142, 52%, 86%)'
     if (rank == 2) return 'hsl(48, 100%, 86%)'
     if (rank == 3) return 'hsl(20, 95%, 86%)'
@@ -20,4 +21,8 @@ export function longestCommonSubsequence(a, b) {
         }
     }
     return matrix[a.length][b.length];
+}
+
+export function idIfy(name: string) {
+    return name.replace(/[^a-zA-z]+/g, '-');
 }

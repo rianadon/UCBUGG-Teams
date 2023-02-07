@@ -81,7 +81,8 @@
       <li>Directors must direct their short</li>
       <li>There is a bound for the number of students in a group</li>
       <li>The number of students who have their n<sup>th</sup> choice might be limited</li>
-      <li>Some shorts might beforced to be included (and the directors would be assigned to these shorts)</li>
+      <li>Some shorts might be forced to be included (and the directors would be assigned to these shorts)</li>
+      <li>The number of absent students (their name includes "absent") is below some threshold</li>
     </ul>
     <p>There is a variable <i>x<sub>ij</sub></i> for every combination of student <i>i</i> who could be assigned to short <i>j</i> (<i>x<sub>ij</sub></i> = 1) or not assigned to the short (<i>x<sub>ij</sub></i> = 0). Since there are only 2 integer possibilities for every variable, the problem is an <a href="https://en.wikipedia.org/wiki/Integer_programming">integer program</a> which can be solved fairly quickly. This website uses a <a href="https://www.npmjs.com/package/highs">WebAssembly port</a> of the <a href="https://highs.dev">HiGHS</a> solver to solve the optimization problem.</p>
     <p>The website is written with the help of the <a href="https://svelte.dev/">Svelte</a> web framework, <a href="https://bulma.io/">Bulma</a> CSS framework, and <a href="https://www.papaparse.com/">Papa Parse</a> for parsing CSV files. The source code is available <a href="https://github.com/rianadon/UCBUGG-Teams">here</a>. </p>

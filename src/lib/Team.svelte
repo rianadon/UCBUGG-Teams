@@ -1,16 +1,19 @@
 <script lang="ts">
- import {longestCommonSubsequence, rankColor} from './util'
+ import { idIfy, longestCommonSubsequence, rankColor} from './util'
  import Optimizer from './Optimizer.svelte'
 
  export let results: any;
 
  let field_name = 'Name';
  let field_director = 'If so, what was the name of your pitch?';
+ let absences = 0; // Number of absences
  let short_fields = {}; // Mapping of short -> CSV field for that short
+ let pinned = {}; // Students who have been pinned to a short
  let assignments = {}; // From optimizer
 
- $: result_data = results.data.filter(d => !!d[field_name])
- $: shorts = result_data.map(d => d[field_director]).filter(d => !!d)
+ $: raw_data = results.data.filter(d => !!d[field_name]) // Valid data from CSV file
+ $: shorts = raw_data.map(d => d[field_director]).filter(d => !!d) // The list of shorts
+ $: result_data = addAbsent(raw_data, absences) // Data including absent students
  $: shorts && assignShorts()
  $: optimizer_data = result_data.map(d => {
      const prefs = {}
@@ -24,6 +27,17 @@
      }
  })
  $: chosenShorts = new Set(Object.values(assignments).map(a => a.short))
+
+ function addAbsent(data, absences) {
+     let dat = [...data];
+     for (let i = 0; i < absences; i++) {
+         const student = { [field_name]: `Absent ${i+1}`, [field_director]: null };
+         for (const short of shorts) student[short_fields[short]] = null;
+         dat.push(student);
+     }
+     console.log(dat);
+     return dat;
+ }
 
  function assignShorts() {
      for (const short of shorts) {
@@ -50,6 +64,11 @@
  function footerStyle(short: string, assignments) {
      if (!assignments[result_data[0][field_name]] || chosenShorts.has(short)) return ''
      return 'text-decoration: line-through'
+ }
+
+ function togglePin(name: string, short: string) {
+     if (pinned[name] == short) pinned[name] = undefined
+     else pinned[name] = short
  }
 </script>
 
@@ -101,6 +120,14 @@
   {/each}
 </div>
 
+<div class="field">
+  <div class="label">Manually Add Absences</div>
+  <div class="control">
+    <input class="input" type="number" min="0" bind:value={absences} style="max-width: 26.4em">
+  </div>
+</div>
+
+
 <table class="table is-striped is-size-7">
   <thead>
     <th>Name</th>
@@ -111,11 +138,17 @@
   </thead>
   <tbody>
     {#each result_data as data}
-      <tr>
+      <tr id={idIfy(data[field_name])}>
         <th>{data[field_name]}</th>
         <td>{data[field_director] || ''}</td>
         {#each shorts as short}
-            <td style={tableStyle(data, short, assignments)}>{data[short_fields[short]]}</td>
+          <td style={tableStyle(data, short, assignments)}>
+            {data[short_fields[short]]}
+            <span class="icon is-small pinner {pinned[data[field_name]] == short ? 'pinned' : ''}"
+                  on:click={togglePin(data[field_name], short)}>
+              <i class="fas fa-thumbtack"></i>
+            </span>
+          </td>
         {/each}
       </tr>
     {/each}
@@ -133,10 +166,27 @@
   </tfoot>
 </table>
 
-<Optimizer data={optimizer_data} shorts={shorts} bind:assignments={assignments} />
+<Optimizer data={optimizer_data} shorts={shorts} pinned={pinned} bind:assignments={assignments} />
 
 <style>
  .fields {
      columns: 2;
  }
+
+ .pinner {
+     margin-left: 0.75em;
+     opacity: 0;
+     color: #000;
+     transition: opacity 0.1s;
+ }
+
+ td:hover .pinner {
+     opacity: 0.5;
+     cursor: pointer;
+ }
+
+ td .pinner.pinned {
+     opacity: 1;
+ }
+
 </style>
