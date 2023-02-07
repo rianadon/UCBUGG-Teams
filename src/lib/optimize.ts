@@ -48,7 +48,7 @@ export function optimizerProblem(data: OptimizerData[], shorts: string[], option
     // Iterate per short, making sure that short gets the correct range of students.
     for (let j = 0; j < shorts.length; j++) {
         const director = shortsToDirectors[shorts[j]]
-        if (!director) throw new Error(`Short ${shorts[j]} does not have a director`)
+        if (!director) throw new Error(`Short "${shorts[j]}" does not have a director`)
 
         const vars = Array.from(data.map((_, i) => `x${i}@${j}`))
         const director_ass = `x${director}@${j}` // Whether the director is assigned to this short

@@ -7,6 +7,7 @@
  export let data
  export let shorts: string[]
 
+ let error: Error = null
  let show_rankings = true
  let solution: HighsSolution
  let shortsToStudents = {}
@@ -33,13 +34,18 @@
  }
  let force_include = {}
 
- $: optimizerScript = optimizerProblem(data, shorts, {
-     power,
-     minStudents: min_students,
-     maxStudents: max_students,
-     forceInclude: force_include,
-     caps
- })
+ let optimizerScript: string
+ $: try {
+     optimizerScript = optimizerProblem(data, shorts, {
+         power,
+         minStudents: min_students,
+         maxStudents: max_students,
+         forceInclude: force_include,
+         caps
+     })
+ } catch (e) {
+     error = e
+ }
  $: highs.then(h => { solution = h.solve(optimizerScript) })
  $: solution && (assignments = parseSolution(solution, data, shorts, absences))
  $: chosenShorts = [...new Set(Object.values(assignments).map(s => s.short))]
@@ -47,6 +53,12 @@
 </script>
 
 <div class="box">
+
+  {#if error}
+    <div class="notification is-danger">
+      {error}
+    </div>
+  {:else}
 
   <div class="field is-horizontal">
     <div class="field field-sm">
@@ -98,7 +110,7 @@
           {#each chosenShorts as short}
             <th>
               {short}
-              {#if force_include[short]}
+              {#if show_rankings && force_include[short]}
                 <span class="icon is-small has-text-grey-dark">
                   <i class="fas fa-thumbtack"></i>
                 </span>
@@ -161,6 +173,7 @@
     {/each}
   </div>
 
+  {/if}
 </div>
 
 <style>
@@ -178,5 +191,8 @@
  .shortlist { columns: 4 }
  @media screen and (max-width: 950px) {
      .shortlist { columns: 3 }
+ }
+ @media screen and (max-width: 700px) {
+     .shortlist { columns: 2 }
  }
 </style>

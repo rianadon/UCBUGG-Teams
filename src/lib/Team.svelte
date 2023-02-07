@@ -9,9 +9,9 @@
  let short_fields = {}; // Mapping of short -> CSV field for that short
  let assignments = {}; // From optimizer
 
- $: shorts = results.data.map(d => d[field_director]).filter(d => !!d)
- $: shorts && assignShorts()
  $: result_data = results.data.filter(d => !!d[field_name])
+ $: shorts = result_data.map(d => d[field_director]).filter(d => !!d)
+ $: shorts && assignShorts()
  $: optimizer_data = result_data.map(d => {
      const prefs = {}
      for (const short of shorts) {
