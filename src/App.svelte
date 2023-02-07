@@ -40,13 +40,8 @@
     </p>
 
     {#if error}
-      <div class="message is-danger">
-        <div class="message-header">
-          Error
-        </div>
-        <div class="message-body">
-          {error}
-        </div>
+      <div class="notification is-danger">
+        {error}
       </div>
     {/if}
 
@@ -64,7 +59,7 @@
         </label>
       </div>
       <p class="block">
-        From the Google Spreadsheet, click "File->Export As->CSV".
+        From the Google Spreadsheet, click "File->Download->CSV".
       </p>
 
       {#if results}

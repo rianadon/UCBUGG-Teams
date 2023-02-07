@@ -46,6 +46,11 @@
      }
      return ''
  }
+
+ function footerStyle(short: string, assignments) {
+     if (!assignments[result_data[0][field_name]] || chosenShorts.has(short)) return ''
+     return 'text-decoration: line-through'
+ }
 </script>
 
 <div class="field">
@@ -74,7 +79,7 @@
   </div>
 </div>
 
-{#if shorts.length}<div class="label">Match columns to shorts</div>{/if}
+{#if shorts.length}<div class="label">Match Columns to Shorts</div>{/if}
 <div class="block fields">
   {#each shorts as short}
     <div class="field is-horizontal">
@@ -115,6 +120,17 @@
       </tr>
     {/each}
   </tbody>
+  <tfoot>
+    <tr>
+      <th></th>
+      <th></th>
+      {#each shorts as short}
+        <th style={footerStyle(short, assignments)}>
+          {result_data.reduce((tot, data) => tot + data[short_fields[short]], 0)}
+        </th>
+      {/each}
+    </tr>
+  </tfoot>
 </table>
 
 <Optimizer data={optimizer_data} shorts={shorts} bind:assignments={assignments} />

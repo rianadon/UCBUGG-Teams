@@ -31,13 +31,13 @@
      7: '',
      8: ''
  }
+ let force_include = {}
 
  $: optimizerScript = optimizerProblem(data, shorts, {
      power,
      minStudents: min_students,
      maxStudents: max_students,
-     absences: absences,
-     maxAbsPerGroup: absences_max,
+     forceInclude: force_include,
      caps
  })
  $: highs.then(h => { solution = h.solve(optimizerScript) })
@@ -96,7 +96,14 @@
       <thead>
         <tr>
           {#each chosenShorts as short}
-            <th>{short}</th>
+            <th>
+              {short}
+              {#if force_include[short]}
+                <span class="icon is-small has-text-grey-dark">
+                  <i class="fas fa-thumbtack"></i>
+                </span>
+              {/if}
+            </th>
           {/each}
         </tr>
       </thead>
@@ -105,9 +112,11 @@
           <tr>
             {#each row as data}
               {#if data && show_rankings}
-                <td style="background-color: {rankColor(data.rank)}">{data.name} ({data.rank})</td>
+                <td style="background-color: {rankColor(data.rank)}">
+                  {data.name} ({data.rank}) {#if data.director} <span class="tag is-success">Dir.</span>{/if}
+                </td>
               {:else}
-                <td>{data?.name || ''}</td>
+                <td>{data?.name || ''} {#if data?.director} <span class="tag is-primary is-light">Dir.</span>{/if}</td>
               {/if}
             {/each}
           </tr>
@@ -116,10 +125,8 @@
     </table>
     </div>
   {:else}
-    <div class="message is-danger">
-      <div class="message-body">
-        The optimizer could not find a solution given the constraints.
-      </div>
+    <div class="notification is-danger">
+      The optimizer could not find a solution given the constraints.
     </div>
   {/if}
 
@@ -137,6 +144,23 @@
     {/each}
   </div>
 
+  <div class="label is-normal">
+    <label class="label">Force Include</label>
+  </div>
+
+  <div class="shortlist">
+    {#each shorts as short}
+      <div class="field">
+        <div class="control">
+          <label class="checkbox">
+            <input type="checkbox" bind:checked={force_include[short]}>
+            {short}
+          </label>
+        </div>
+      </div>
+    {/each}
+  </div>
+
 </div>
 
 <style>
@@ -149,5 +173,10 @@
      flex-grow: 0;
      white-space: nowrap;
      margin: 0 1em;
+ }
+
+ .shortlist { columns: 4 }
+ @media screen and (max-width: 950px) {
+     .shortlist { columns: 3 }
  }
 </style>

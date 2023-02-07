@@ -12,6 +12,9 @@ export interface OptimizerOptions {
     power: number
     minStudents: number
     maxStudents: number
+    forceInclude: {
+        [short: string]: boolean
+    }
     caps: {
         [pref: number]: string // string since they come in from text fields
     }
@@ -57,10 +60,15 @@ export function optimizerProblem(data: OptimizerData[], shorts: string[], option
             `${vars_nodir.join('+')} - ${options.minStudents - 1} ${director_ass} >= 0`,
             `${vars_nodir.join('+')} - ${options.maxStudents - 1} ${director_ass} <= 0`
         )
+
+        // Handle forced inclusion
+        if (options.forceInclude[shorts[j]]) {
+            constraints.push(director_ass + ' = 1')
+        }
     }
 
     for (const [tally, cap] of Object.entries(options.caps || {})) {
-        if (!isNaN(cap) && cap.length) constraints.push(tallies[tally].join('+') + '<=' + cap)
+        if (!isNaN(Number(cap)) && cap.length) constraints.push(tallies[tally].join('+') + '<=' + cap)
     }
 
     return `Minimize ${objective}
@@ -75,6 +83,7 @@ type Assignments = {
     [name: string]: {
         short: string
         rank?: number
+        director: boolean
     }
 }
 
@@ -83,7 +92,11 @@ export function parseSolution(solution: HighsSolution, data: OptimizerData[], sh
     for (let i = 0; i < data.length; i++) {
         for (let j = 0; j < shorts.length; j++) {
             if ((solution.Columns[`x${i}@${j}`] as any).Primal == 1) {
-                assignments[data[i].name] = { short: shorts[j], rank: data[i].preferences[shorts[j]] }
+                assignments[data[i].name] = {
+                    short: shorts[j],
+                    rank: data[i].preferences[shorts[j]],
+                    director: data[i].directing == shorts[j]
+                }
             }
         }
     }
@@ -93,7 +106,8 @@ export function parseSolution(solution: HighsSolution, data: OptimizerData[], sh
 export function assignmentTable(assignments: Assignments, shorts: string[]) {
     const table = shorts.map(short => Object.entries(assignments)
         .filter(([_, s]) => s.short == short)
-        .map(([n, s]) => ({ name: n, rank: s.rank }))
+        .map(([n, s]) => ({ name: n, ...s }))
+        .sort((a, b) => b.director - a.director)
                             )
     const inverted = []
     for (let i = 0; i < Math.max(...table.map(c => c.length)); i++) {
