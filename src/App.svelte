@@ -45,26 +45,26 @@
       </div>
     {/if}
 
-      <div class="file is-primary block">
-        <label class="file-label">
-          <input class="file-input" type="file" name="resume" on:change={upload}>
-          <span class="file-cta">
-            <span class="file-icon">
-              <i class="fas fa-upload"></i>
-            </span>
-            <span class="file-label">
-              Upload csv…
-            </span>
+    <div class="file is-primary block">
+      <label class="file-label">
+        <input class="file-input" type="file" name="resume" on:change={upload}>
+        <span class="file-cta">
+          <span class="file-icon">
+            <i class="fas fa-upload"></i>
           </span>
-        </label>
-      </div>
-      <p class="block">
-        From the Google Spreadsheet, click "File->Download->CSV".
-      </p>
+          <span class="file-label">
+            Upload csv…
+          </span>
+        </span>
+      </label>
+    </div>
+    <p class="block">
+      From the Google Spreadsheet, click "File->Download->CSV".
+    </p>
 
-      {#if results}
-        <Team results={results} />
-      {/if}
+    {#if results}
+      <Team results={results} />
+    {/if}
 
   </div>
 </section>

@@ -16,7 +16,7 @@
      locateFile: () => highsUrl
  })
 
- let power = '0.5'
+ let power = '1'
  let min_students = 4
  let max_students = 6
  let absences = 0
