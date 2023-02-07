@@ -24,5 +24,5 @@ export function longestCommonSubsequence(a, b) {
 }
 
 export function idIfy(name: string) {
-    return name.replace(/[^a-zA-z]+/g, '-');
+    return name.replace(/[^a-zA-z0-9]+/g, '-');
 }
