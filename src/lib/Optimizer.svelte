@@ -18,7 +18,7 @@ import { idIfy, rankColor } from './util'
      locateFile: () => highsUrl
  })
 
- let power = '2'
+ let power = '1'
  let min_students = 4
  let max_students = 6
  let absences_max = 2
