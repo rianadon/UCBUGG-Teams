@@ -79,7 +79,7 @@ import { idIfy, rankColor } from './util'
       </p>
     </div>
     <div class="field-label is-normal field-squish">
-      <label class="label">&leq; Students Per Group &leq;</label>
+      <label class="label">&leq; Students/Gr &leq;</label>
     </div>
     <div class="field field-sm">
       <p class="control">
@@ -208,7 +208,7 @@ import { idIfy, rankColor } from './util'
 <style>
  .field-sm { width: 4em; }
  .field-xs { width: 3em; }
- .field-label-xs { margin-right: 0.5em; }
+ .field-label-xs { margin-right: 0.5em; white-space: nowrap; }
  .field-check { line-height: 2.2em; }
 
  .field-squish {
