@@ -10,6 +10,7 @@
  let short_fields = {}; // Mapping of short -> CSV field for that short
  let pinned = {}; // Students who have been pinned to a short
  let assignments = {}; // From optimizer
+ let short_sums = {}; // Sum of rankings for every short
 
  $: raw_data = results.data.filter(d => !!d[field_name]) // Valid data from CSV file
  $: shorts = raw_data.map(d => d[field_director]).filter(d => !!d) // The list of shorts
@@ -27,6 +28,12 @@
      }
  })
  $: chosenShorts = new Set(Object.values(assignments).map(a => a.short))
+ $: {
+     for (const short of shorts) {
+         short_sums[short] = result_data.reduce((tot, data) => tot + data[short_fields[short]], 0)
+     }
+ }
+ $: sorted_shorts = [...shorts].sort((a, b) => short_sums[a] - short_sums[b])
 
  function addAbsent(data, absences) {
      let dat = [...data];
@@ -159,14 +166,14 @@
       <th></th>
       {#each shorts as short}
         <th style={footerStyle(short, assignments)}>
-          {result_data.reduce((tot, data) => tot + data[short_fields[short]], 0)}
+          {short_sums[short]}
         </th>
       {/each}
     </tr>
   </tfoot>
 </table>
 
-<Optimizer data={optimizer_data} shorts={shorts} pinned={pinned} bind:assignments={assignments} />
+<Optimizer data={optimizer_data} shorts={sorted_shorts} pinned={pinned} bind:assignments={assignments} />
 
 <style>
  .fields {

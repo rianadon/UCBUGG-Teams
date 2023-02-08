@@ -18,7 +18,7 @@ import { idIfy, rankColor } from './util'
      locateFile: () => highsUrl
  })
 
- let power = '1'
+ let power = '2'
  let min_students = 4
  let max_students = 6
  let absences_max = 2
@@ -50,7 +50,7 @@ import { idIfy, rankColor } from './util'
  }
  $: highs.then(h => { solution = h.solve(optimizerScript) });
  $: solution && (assignments = parseSol(solution))
- $: chosenShorts = [...new Set(Object.values(assignments).map(s => s.short))]
+ $: chosenShorts = [...new Set(Object.values(assignments).map(s => s.short))].sort()
  $: assignTable = assignmentTable(assignments, chosenShorts)
 
  function parseSol(solution) {
@@ -186,7 +186,7 @@ import { idIfy, rankColor } from './util'
   </div>
 
   <div class="label is-normal">
-    <label class="label">Force Include</label>
+    <label class="label">Force Include (Sorted by Popularity)</label>
   </div>
 
   <div class="shortlist">
