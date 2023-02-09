@@ -1,6 +1,6 @@
 <script lang="ts">
- import { assignmentTable, optimizerProblem, parseSolution, countRank } from './optimize'
-import { idIfy, rankColor } from './util'
+ import AssignmentTable from './AssignmentTable.svelte'
+ import { optimizerProblem, parseSolution, countRank } from './optimize'
  import highs_loader, { HighsSolution } from 'highs'
  import highsUrl from 'highs/build/highs.wasm?url'
 
@@ -33,34 +33,59 @@ import { idIfy, rankColor } from './util'
      8: ''
  }
  let force_include = {}
+ let allAssignTables = []
 
  let optimizerScript: string
  $: try {
      optimizerScript = optimizerProblem(data, shorts, {
-         power,
+         power, pinned, caps,
          minStudents: min_students,
          maxStudents: max_students,
          forceInclude: force_include,
          absencesMax: absences_max,
-         pinned,
-         caps
      })
  } catch (e) {
      error = e
  }
  $: highs.then(h => { solution = h.solve(optimizerScript) });
- $: solution && (assignments = parseSol(solution))
+ $: solution && (assignments = parseSol(solution)) && (allAssignTables = [])
  $: chosenShorts = [...new Set(Object.values(assignments).map(s => s.short))].sort()
- $: assignTable = assignmentTable(assignments, chosenShorts)
 
  function parseSol(solution) {
      // Hide this in a function so svelte thinks the assignments depends only on the assignments
      return parseSolution(solution, data, shorts)
  }
 
- function scroll(name) {
-     // Scroll to the element for the given name in the Students table.
-     document.getElementById(idIfy(name)).scrollIntoView()
+ function calculateAllSolutions() {
+     // Calculate a maximum of 50 alternate solutions with the same objective value
+     allAssignTables = []
+     highs.then(h => {
+         const minScore = solution.ObjectiveValue
+         const ignoredSolutions = [solution]
+         for (let i = 0; i < 50; i++) {
+             // Do everything above, but for the second set of assignments
+             const secondScript = optimizerProblem(data, shorts, {
+                 power, pinned, caps, ignoredSolutions,
+                 minStudents: min_students,
+                 maxStudents: max_students,
+                 forceInclude: force_include,
+                 absencesMax: absences_max,
+             })
+             const secondSolution = h.solve(secondScript)
+             if (secondSolution.Status !== 'Optimal') break
+             if (secondSolution.ObjectiveValue > minScore) break
+             const secondAssignments = parseSol(secondSolution)
+             const secondShorts = [...new Set(Object.values(secondAssignments).map(s => s.short))].sort()
+             ignoredSolutions.push(secondSolution)
+             allAssignTables = [...allAssignTables, {
+                 shorts: secondShorts,
+                 assignments: secondAssignments
+             }]
+         }
+         if (allAssignTables.length == 0) {
+             allAssignTables = false // Signal that no alternate solutions were found
+         }
+     })
  }
 </script>
 
@@ -124,47 +149,8 @@ import { idIfy, rankColor } from './util'
   </div>
 
   {#if solution?.Status == 'Optimal'}
-    <div class="block is-flex is-justify-content-center">
-    <table class="table">
-      <thead>
-        <tr>
-          {#each chosenShorts as short}
-            <th>
-              {short}
-              {#if show_rankings && force_include[short]}
-                <span class="icon is-small has-text-grey-dark">
-                  <i class="fas fa-thumbtack"></i>
-                </span>
-              {/if}
-            </th>
-          {/each}
-        </tr>
-      </thead>
-      <tbody>
-        {#each assignTable as row}
-          <tr>
-            {#each row as data}
-              {#if data && show_rankings}
-                <td style="background-color: {rankColor(data.rank)}" on:click={scroll(data.name)}>
-                  {data.name} ({data.rank}) {#if data.director} <span class="tag is-success">Dir.</span>{/if}
-                  {#if pinned[data.name]}
-                    <span class="icon is-small has-text-grey-dark">
-                      <i class="fas fa-thumbtack"></i>
-                    </span>
-                  {/if}
-                </td>
-              {:else}
-                <td on:click={scroll(data.name)}>
-                  {data ? (data.name.toLowerCase().includes('absent') ? '+1' : data.name) : ''}
-                  {#if data?.director} <span class="tag is-primary is-light">Dir.</span>{/if}
-                </td>
-              {/if}
-            {/each}
-          </tr>
-        {/each}
-      </tbody>
-    </table>
-    </div>
+    <AssignmentTable shorts={chosenShorts} assignments={assignments}
+                     show_rankings={show_rankings} force_include={force_include} pinned={pinned} />
   {:else}
     <div class="notification is-danger">
       The optimizer could not find a solution given the constraints.
@@ -189,7 +175,7 @@ import { idIfy, rankColor } from './util'
     <label class="label">Force Include (Sorted by Popularity)</label>
   </div>
 
-  <div class="shortlist">
+  <div class="shortlist block">
     {#each shorts as short}
       <div class="field">
         <div class="control">
@@ -201,6 +187,26 @@ import { idIfy, rankColor } from './util'
       </div>
     {/each}
   </div>
+
+  <div class="block is-flex is-justify-content-center">
+    <button class="button is-primary" on:click={calculateAllSolutions}>
+      <span class="icon is-small">
+        <i class="fas fa-calculator"></i>
+      </span>
+      <span>Show All Solutions</span>
+    </button>
+  </div>
+
+  {#if allAssignTables === false}
+    <div class="notification is-warning">
+      Lucky you! There is only one solution!
+    </div>
+  {:else}
+    {#each allAssignTables as {shorts, assignments}}
+      <AssignmentTable shorts={shorts} assignments={assignments}
+                       show_rankings={show_rankings} force_include={force_include} pinned={pinned} />
+    {/each}
+  {/if}
 
   {/if}
 </div>

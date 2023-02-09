@@ -22,6 +22,7 @@ export interface OptimizerOptions {
     caps: {
         [pref: number]: string // string since they come in from text fields
     }
+    ignoredSolutions?: HighsSolution[] // Solutions to exclude, useful if outputting multiple solutions
 }
 
 export function optimizerProblem(data: OptimizerData[], shorts: string[], options: OptimizerOptions) {
@@ -77,6 +78,20 @@ export function optimizerProblem(data: OptimizerData[], shorts: string[], option
         }
     }
 
+    // To handle ignored solutions, add the constraint that the dot product between the variables
+    // and ignored solutions must be less than the number of variables.
+    // i.e. the returned solution must have at one variable reassigned.
+    if (options.ignoredSolutions) {
+        for (const solution of options.ignoredSolutions) {
+            let constraint = []
+            for (const [variable, value] of Object.entries(solution.Columns)) {
+                if (value.Primal == 1) constraint.push(variable)
+            }
+            constraints.push(constraint.join('+') + '<=' + (constraint.length-1))
+        }
+    }
+
+    // Handle caps on the number of students given some rank of short
     for (const [tally, cap] of Object.entries(options.caps || {})) {
         if (!isNaN(Number(cap)) && cap.length) constraints.push(tallies[tally].join('+') + '<=' + cap)
     }
@@ -97,6 +112,7 @@ type Assignments = {
     }
 }
 
+/** Convert the solution given by HIGHS to an assignment of student -> short */
 export function parseSolution(solution: HighsSolution, data: OptimizerData[], shorts: string[]) {
     const assignments: Assignments = {}
     for (let i = 0; i < data.length; i++) {
@@ -113,11 +129,12 @@ export function parseSolution(solution: HighsSolution, data: OptimizerData[], sh
     return assignments
 }
 
+/** Convert solution to a format that can be displayed in a table on the webpage */
 export function assignmentTable(assignments: Assignments, shorts: string[]) {
     const table = shorts.map(short => Object.entries(assignments)
         .filter(([_, s]) => s.short == short)
         .map(([n, s]) => ({ name: n, ...s }))
-        .sort((a, b) => b.director - a.director)
+        .sort((a, b) => Number(b.director) - Number(a.director))
                             )
     const inverted = []
     for (let i = 0; i < Math.max(...table.map(c => c.length)); i++) {
