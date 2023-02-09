@@ -67,6 +67,10 @@
     <div class="notification is-danger">
       {error}
     </div>
+  {:else if !highs}
+    <div class="notification">
+      Loading Optimization Engine
+    </div>
   {:else}
 
   <div class="field is-horizontal">
