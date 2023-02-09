@@ -1,7 +1,7 @@
 <script lang="ts">
  import AssignmentTable from './AssignmentTable.svelte'
- import { optimizerProblem, parseSolution, countRank } from './optimize'
- import highs_loader, { HighsSolution } from 'highs'
+ import { countRank, optimize } from './optimize'
+ import highs_loader, { Highs } from 'highs'
  import highsUrl from 'highs/build/highs.wasm?url'
 
  export let data
@@ -9,83 +9,55 @@
  export let pinned: object
 
  let error: Error = null
- let show_rankings = true
- let solution: HighsSolution
- let shortsToStudents = {}
+ let solutions: Generator<Assignments>
  export let assignments = {}
 
- const highs = highs_loader({
+ let highs: Highs
+ highs_loader({
      locateFile: () => highsUrl
- })
+ }).then(h => highs = h)
 
+ let show_rankings = true
  let power = '1'
  let min_students = 4
  let max_students = 6
  let absences_max = 2
- let caps = {
-     1: '',
-     2: '',
-     3: '',
-     4: '',
-     5: '',
-     6: '',
-     7: '',
-     8: ''
- }
+ let caps = { 1: '', 2: '', 3: '', 4: '', 5: '', 6: '', 7: '', 8: '' };
  let force_include = {}
  let allAssignTables = []
 
- let optimizerScript: string
- $: try {
-     optimizerScript = optimizerProblem(data, shorts, {
-         power, pinned, caps,
-         minStudents: min_students,
-         maxStudents: max_students,
-         forceInclude: force_include,
-         absencesMax: absences_max,
-     })
- } catch (e) {
-     error = e
+ $: {
+     if (highs) try {
+         solutions = optimize(highs, data, shorts, {
+             power, pinned, caps,
+             minStudents: min_students,
+             maxStudents: max_students,
+             forceInclude: force_include,
+             absencesMax: absences_max,
+         })
+         const {done, value} = solutions.next()
+         assignments = done ? {} : value
+         allAssignTables = []
+         error = null
+     } catch (e) {
+         error = e
+     }
  }
- $: highs.then(h => { solution = h.solve(optimizerScript) });
- $: solution && (assignments = parseSol(solution)) && (allAssignTables = [])
  $: chosenShorts = [...new Set(Object.values(assignments).map(s => s.short))].sort()
-
- function parseSol(solution) {
-     // Hide this in a function so svelte thinks the assignments depends only on the assignments
-     return parseSolution(solution, data, shorts)
- }
 
  function calculateAllSolutions() {
      // Calculate a maximum of 50 alternate solutions with the same objective value
      allAssignTables = []
-     highs.then(h => {
-         const minScore = solution.ObjectiveValue
-         const ignoredSolutions = [solution]
-         for (let i = 0; i < 50; i++) {
-             // Do everything above, but for the second set of assignments
-             const secondScript = optimizerProblem(data, shorts, {
-                 power, pinned, caps, ignoredSolutions,
-                 minStudents: min_students,
-                 maxStudents: max_students,
-                 forceInclude: force_include,
-                 absencesMax: absences_max,
-             })
-             const secondSolution = h.solve(secondScript)
-             if (secondSolution.Status !== 'Optimal') break
-             if (secondSolution.ObjectiveValue > minScore) break
-             const secondAssignments = parseSol(secondSolution)
-             const secondShorts = [...new Set(Object.values(secondAssignments).map(s => s.short))].sort()
-             ignoredSolutions.push(secondSolution)
-             allAssignTables = [...allAssignTables, {
-                 shorts: secondShorts,
-                 assignments: secondAssignments
-             }]
-         }
-         if (allAssignTables.length == 0) {
-             allAssignTables = false // Signal that no alternate solutions were found
-         }
-     })
+     for (const secondAssignments of solutions) {
+         const secondShorts = [...new Set(Object.values(secondAssignments).map(s => s.short))].sort()
+         allAssignTables = [...allAssignTables, {
+             shorts: secondShorts,
+             assignments: secondAssignments
+         }]
+     }
+     if (allAssignTables.length == 0) {
+         allAssignTables = false // Signal that no alternate solutions were found
+     }
  }
 </script>
 
@@ -148,7 +120,7 @@
     </div>
   </div>
 
-  {#if solution?.Status == 'Optimal'}
+  {#if Object.keys(assignments).length}
     <AssignmentTable shorts={chosenShorts} assignments={assignments}
                      show_rankings={show_rankings} force_include={force_include} pinned={pinned} />
   {:else}

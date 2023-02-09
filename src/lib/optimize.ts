@@ -1,4 +1,6 @@
-import { HighsSolution } from 'highs'
+import type { HighsSolution, Highs } from 'highs'
+
+const MAX_SOLUTIONS = 50
 
 export interface OptimizerData {
      name: string
@@ -127,6 +129,22 @@ export function parseSolution(solution: HighsSolution, data: OptimizerData[], sh
         }
     }
     return assignments
+}
+
+/** Return a generator that yields solutions for an optimization problem. */
+export function* optimize(highs: Highs, data: OptimizerData[], shorts: string[], options: OptimizerOptions) {
+    let ignoredSolutions = [...(options.ignoredSolutions || [])]
+    let scoreBound = Infinity
+    for (let i = 0; i < MAX_SOLUTIONS; i++) {
+        const problem = optimizerProblem(data, shorts, {...options, ignoredSolutions})
+        const solution = highs.solve(problem)
+        // Two break conditions: no solution found or the solution has a lower objective value
+        if (solution.Status !== 'Optimal') break
+        if (solution.ObjectiveValue > scoreBound) break
+        ignoredSolutions.push(solution)
+        scoreBound = solution.ObjectiveValue
+        yield parseSolution(solution, data, shorts)
+    }
 }
 
 /** Convert solution to a format that can be displayed in a table on the webpage */
