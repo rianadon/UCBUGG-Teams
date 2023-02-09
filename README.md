@@ -1,37 +1,27 @@
-# Svelte + TS + Vite
+# UCBUGG Team Selection
 
-This template should help get you started developing with Svelte and TypeScript in Vite.
+A website for generating possible team assignments for the [http://ucbugg.com](UCBUGG) 3D Animation class at UC Berkeley.
+
+It's built with [Svelte](https://svelte.dev/) and [Bulma](https://bulma.io/). Svelte has a concise tutorial on [their website](https://svelte.dev/tutorial/basics), and Bulma's website serves as a great reference of all the components.
+
+Relevant files in this repository are:
+- `index.html`: The page's top-level HTML, which includes icons and other metadata.
+- `src/App.svelte`: The main component that handles parsing CSV files.
+- `src/lib/Team.svelte`: The component that displays all students and their team preferences.
+- `src/lib/Optimizer.svelte`: The component that handles configuring optimization parameters.
+- `src/lib/AssignmentTable.svelte`: A component that shows an assignment of teams and the students in each team.
+- `src/lib/optimize.ts`: Contains functions for running the optimizer and parsing results.
+- `src/lib/util.ts`: Small functions used across the codebase.
+
+To get started developing, install [Node.js](https://nodejs.org/en/), clone the repository, then run:
+- `npm install` (installs dependencies)
+- `npm run dev` (will build the website and refresh automatically when you change files)
+
+The remainder of this README is contains relevant sections from the Svelte + TS + Vite template.
 
 ## Recommended IDE Setup
 
 [VS Code](https://code.visualstudio.com/) + [Svelte](https://marketplace.visualstudio.com/items?itemName=svelte.svelte-vscode).
-
-## Need an official Svelte framework?
-
-Check out [SvelteKit](https://github.com/sveltejs/kit#readme), which is also powered by Vite. Deploy anywhere with its serverless-first approach and adapt to various platforms, with out of the box support for TypeScript, SCSS, and Less, and easily-added support for mdsvex, GraphQL, PostCSS, Tailwind CSS, and more.
-
-## Technical considerations
-
-**Why use this over SvelteKit?**
-
-- It brings its own routing solution which might not be preferable for some users.
-- It is first and foremost a framework that just happens to use Vite under the hood, not a Vite app.
-
-This template contains as little as possible to get started with Vite + TypeScript + Svelte, while taking into account the developer experience with regards to HMR and intellisense. It demonstrates capabilities on par with the other `create-vite` templates and is a good starting point for beginners dipping their toes into a Vite + Svelte project.
-
-Should you later need the extended capabilities and extensibility provided by SvelteKit, the template has been structured similarly to SvelteKit so that it is easy to migrate.
-
-**Why `global.d.ts` instead of `compilerOptions.types` inside `jsconfig.json` or `tsconfig.json`?**
-
-Setting `compilerOptions.types` shuts out all other types not explicitly listed in the configuration. Using triple-slash references keeps the default TypeScript setting of accepting type information from the entire workspace, while also adding `svelte` and `vite/client` type information.
-
-**Why include `.vscode/extensions.json`?**
-
-Other templates indirectly recommend extensions via the README, but this file allows VS Code to prompt the user to install the recommended extension upon opening the project.
-
-**Why enable `allowJs` in the TS template?**
-
-While `allowJs: false` would indeed prevent the use of `.js` files in the project, it does not prevent the use of JavaScript syntax in `.svelte` files. In addition, it would force `checkJs: false`, bringing the worst of both worlds: not being able to guarantee the entire codebase is TypeScript, and also having worse typechecking for the existing JavaScript. In addition, there are valid use cases in which a mixed codebase may be relevant.
 
 **Why is HMR not preserving my local component state?**
 
