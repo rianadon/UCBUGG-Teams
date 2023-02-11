@@ -1,6 +1,6 @@
 <script lang="ts">
  import AssignmentTable from './AssignmentTable.svelte'
- import { countRank, optimize } from './optimize'
+import { alternateShortOptions, countRank, optimize } from './optimize'
  import highs_loader, { Highs } from 'highs'
  import highsUrl from 'highs/build/highs.wasm?url'
 
@@ -21,6 +21,7 @@
  let power = '1'
  let min_students = 4
  let max_students = 6
+ let max_groups = 6
  let absences_max = 2
  let caps = { 1: '', 2: '', 3: '', 4: '', 5: '', 6: '', 7: '', 8: '' };
  let force_include = {}
@@ -32,6 +33,7 @@
              power, pinned, caps,
              minStudents: min_students,
              maxStudents: max_students,
+             maxGroups: max_groups,
              forceInclude: force_include,
              absencesMax: absences_max,
          })
@@ -50,10 +52,27 @@
      allAssignTables = []
      for (const secondAssignments of solutions) {
          const secondShorts = [...new Set(Object.values(secondAssignments).map(s => s.short))].sort()
-         allAssignTables = [...allAssignTables, {
-             shorts: secondShorts,
-             assignments: secondAssignments
-         }]
+         allAssignTables.push({ shorts: secondShorts, assignments: secondAssignments })
+     }
+     if (allAssignTables.length == 0) {
+         allAssignTables = false // Signal that no alternate solutions were found
+     }
+ }
+
+ function calculateOtherSolutions() {
+     // Calculate a maximum of 50 alternate solutions with the same objective value
+     allAssignTables = []
+     const options = alternateShortOptions(highs, data, shorts, {
+         power, pinned, caps,
+         minStudents: min_students,
+         maxStudents: max_students,
+         maxGroups: max_groups,
+         forceInclude: force_include,
+         absencesMax: absences_max,
+     })
+     for (const secondAssignments of options) {
+         const secondShorts = [...new Set(Object.values(secondAssignments).map(s => s.short))].sort()
+         allAssignTables.push({ shorts: secondShorts, assignments: secondAssignments })
      }
      if (allAssignTables.length == 0) {
          allAssignTables = false // Signal that no alternate solutions were found
@@ -96,6 +115,16 @@
         <input class="input" type="number" bind:value={absences_max}>
       </p>
     </div>
+
+    <div class="field-label is-normal field-label-xs">
+      <label class="label">Gr &leq;</label>
+    </div>
+    <div class="field field-sm">
+      <p class="control">
+        <input class="input" type="number" bind:value={max_groups}>
+      </p>
+    </div>
+
     <div class="field-label is-normal">
       <label class="label">Mode</label>
     </div>
@@ -164,13 +193,23 @@
     {/each}
   </div>
 
-  <div class="block is-flex is-justify-content-center">
-    <button class="button is-primary" on:click={calculateAllSolutions}>
-      <span class="icon is-small">
-        <i class="fas fa-calculator"></i>
-      </span>
-      <span>Show All Solutions</span>
-    </button>
+  <div class="field is-flex is-justify-content-center is-grouped">
+    <p class="control">
+      <button class="button is-primary" on:click={calculateAllSolutions}>
+        <span class="icon is-small">
+          <i class="fas fa-calculator"></i>
+        </span>
+        <span>Show All Solutions</span>
+      </button>
+    </p>
+    <p class="control">
+      <button class="button" on:click={calculateOtherSolutions}>
+        <span class="icon is-small">
+          <i class="fas fa-calculator"></i>
+        </span>
+        <span>Show Solutions with Alternative Shorts</span>
+      </button>
+    </p>
   </div>
 
   {#if allAssignTables === false}

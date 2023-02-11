@@ -1,5 +1,5 @@
 <script lang="ts">
- import { idIfy, longestCommonSubsequence, rankColor} from './util'
+ import { idIfy, duplicates, longestCommonSubsequence, rankColor} from './util'
  import Optimizer from './Optimizer.svelte'
 
  export let results: any;
@@ -136,10 +136,19 @@
 </div>
 
 {#if new Set(Object.values(short_fields)).size < Object.values(short_fields).length}
-  <div class="notification is-danger">
-    There are duplicate shorts matched to columns.
+  <div class="message is-danger">
+    <div class="message-header">
+      There are duplicate shorts matched to columns.
+    </div>
+    <div class="message-body">
+      <ul>
+        {#each duplicates(Object.values(short_fields)) as dup}
+          <li>{dup}</li>
+        {/each}
+      </ul>
+    </div>
   </div>
-{/if}
+{:else}
 
 <div class="field">
   <div class="label">Manually Add Absences</div>
@@ -188,6 +197,7 @@
 </table>
 
 <Optimizer data={optimizer_data} shorts={sorted_shorts} pinned={pinned} bind:assignments={assignments} />
+{/if}
 
 <style>
  .fields {

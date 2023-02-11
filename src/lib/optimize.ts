@@ -15,6 +15,7 @@ export interface OptimizerOptions {
     minStudents: number
     maxStudents: number
     absencesMax: number
+    maxGroups: number
     forceInclude: {
         [short: string]: boolean
     }
@@ -25,6 +26,7 @@ export interface OptimizerOptions {
         [pref: number]: string // string since they come in from text fields
     }
     ignoredSolutions?: HighsSolution[] // Solutions to exclude, useful if outputting multiple solutions
+    ignoredShortLists?: string[][]
 }
 
 export function optimizerProblem(data: OptimizerData[], shorts: string[], options: OptimizerOptions) {
@@ -56,14 +58,17 @@ export function optimizerProblem(data: OptimizerData[], shorts: string[], option
         }
         if (data[i].name.toLowerCase().includes('absent')) absents.push(i)
     }
+    console.log(shortsToDirectors)
 
+    const chosen = []
     // Iterate per short, making sure that short gets the correct range of students.
     for (let j = 0; j < shorts.length; j++) {
         const director = shortsToDirectors[shorts[j]]
-        if (!director) throw new Error(`Short "${shorts[j]}" does not have a director`)
+        if (!(shorts[j] in shortsToDirectors)) throw new Error(`Short "${shorts[j]}" does not have a director`)
 
         const vars = Array.from(data.map((_, i) => `x${i}@${j}`))
         const director_ass = `x${director}@${j}` // Whether the director is assigned to this short
+        chosen.push(director_ass)
         const vars_nodir = vars.filter(v => v != director_ass)
 
         // Highs gets upset if the director assigned variable appears in the equation twice.
@@ -77,6 +82,16 @@ export function optimizerProblem(data: OptimizerData[], shorts: string[], option
         // Handle forced inclusion
         if (options.forceInclude[shorts[j]]) {
             constraints.push(director_ass + ' = 1')
+        }
+    }
+    constraints.push(chosen.join('+') + '<=' + options.maxGroups)
+
+    // Handling ignored sets of shorts works very similar to ignoring solutions below.
+    if (options.ignoredShortLists) {
+        for (const shortList of options.ignoredShortLists) {
+            const sum = shortList.map(s => chosen[shorts.indexOf(s)]).join('+')
+            console.log(sum)
+            constraints.push(sum + '<=' + (shortList.length-1));
         }
     }
 
@@ -144,6 +159,19 @@ export function* optimize(highs: Highs, data: OptimizerData[], shorts: string[],
         ignoredSolutions.push(solution)
         scoreBound = solution.ObjectiveValue
         yield parseSolution(solution, data, shorts)
+    }
+}
+
+/** Return a generator that yields solutions with different short assignments. */
+export function* alternateShortOptions(highs: Highs, data: OptimizerData[], shorts: string[], options: OptimizerOptions) {
+    let ignoredShortLists = [...(options.ignoredShortLists || [])]
+    for (let i = 0; i < 10; i++) {
+        const problem = optimizerProblem(data, shorts, {...options, ignoredShortLists})
+        const solution = highs.solve(problem)
+        if (solution.Status !== 'Optimal') break
+        const parsed = parseSolution(solution, data, shorts)
+        ignoredShortLists.push([...new Set(Object.values(parsed).map(s => s.short))])
+        if (i > 0) yield parsed
     }
 }
 

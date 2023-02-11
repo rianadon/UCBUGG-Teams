@@ -11,18 +11,24 @@ export function rankColor(rank: number) {
 // Thanks stackoverflow
 export function longestCommonSubsequence(a, b) {
     const matrix = Array(a.length + 1).fill().map(() => Array(b.length + 1).fill(0));
+    let maximum = 0;
     for(let i = 1; i < a.length + 1; i++) {
         for(let j = 1; j < b.length + 1; j++) {
             if(a[i-1] === b[j-1]) {
                 matrix[i][j] = 1 + matrix[i-1][j-1];
+                maximum = Math.max(maximum, matrix[i][j]);
             } else {
-                matrix[i][j] = Math.max(matrix[i-1][j], matrix[i][j-1]);
+                matrix[i][j] = 0;
             }
         }
     }
-    return matrix[a.length][b.length];
+    return maximum;
 }
 
 export function idIfy(name: string) {
     return name.replace(/[^a-zA-z0-9]+/g, '-');
+}
+
+export function duplicates(list: string[]) {
+    return list.filter((e, i) => list.indexOf(e) !== i)
 }
