@@ -46,6 +46,14 @@
      return dat;
  }
 
+ function assignShort(short: string) {
+     return (evt: Event) => {
+         short_fields = {
+             ...short_fields,
+             [short]: evt.target.value
+         }
+     }
+ }
  function assignShorts() {
      for (const short of shorts) {
          const distances = results.meta.fields.map(f => longestCommonSubsequence(f.toLowerCase(), short.toLowerCase()))
@@ -114,7 +122,7 @@
         <div class="field is-narrow">
           <div class="control">
             <div class="select is-small">
-              <select bind:value={short_fields[short]}>
+              <select value={short_fields[short]} on:change={assignShort(short)}>
                 {#each results.meta.fields as field}
                   <option>{field}</option>
                 {/each}
@@ -126,6 +134,12 @@
     </div>
   {/each}
 </div>
+
+{#if new Set(Object.values(short_fields)).size < Object.values(short_fields).length}
+  <div class="notification is-danger">
+    There are duplicate shorts matched to columns.
+  </div>
+{/if}
 
 <div class="field">
   <div class="label">Manually Add Absences</div>
